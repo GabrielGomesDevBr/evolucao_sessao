@@ -1,0 +1,359 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  PROFESSIONAL
+  RECEPTION
+  INTERN
+  READONLY
+  PATIENT
+  GUARDIAN
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  COMPLETED
+  NO_SHOW
+  CANCELED
+  RESCHEDULED
+  BLOCKED
+}
+
+enum AppointmentMode {
+  IN_PERSON
+  ONLINE
+  HYBRID
+}
+
+enum DocumentType {
+  DECLARATION
+  CERTIFICATE
+  REPORT
+  MULTIDISCIPLINARY_REPORT
+  PSYCHOLOGICAL_EVALUATION
+  OPINION
+}
+
+enum RecordSensitivity {
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+enum SessionFormat {
+  IN_PERSON
+  ONLINE
+  HOME_VISIT
+  GROUP
+}
+
+enum NotificationType {
+  INTERNAL
+  SYSTEM
+  SECURITY
+}
+
+enum AuditAction {
+  CREATED
+  UPDATED
+  DELETED
+  VIEWED
+  EXPORTED
+  SHARED
+  AUTHENTICATED
+  PIN_VERIFIED
+}
+
+model Tenant {
+  id                           String              @id @default(cuid())
+  name                         String
+  slug                         String              @unique
+  brandingName                 String?
+  recordRetentionYears         Int                 @default(5)
+  healthDataRetentionYears     Int                 @default(20)
+  disposalMode                 String              @default("ANONYMIZE")
+  disposalWindowDays           Int                 @default(30)
+  requireDocumentShareConsent  Boolean             @default(true)
+  createdAt                    DateTime            @default(now())
+  updatedAt                    DateTime            @updatedAt
+  memberships                  Membership[]
+  patients                     Patient[]
+  professionals                ProfessionalProfile[]
+  appointments                 Appointment[]
+  evolutions                   Evolution[]
+  restrictedRecords            RestrictedRecord[]
+  documents                    Document[]
+  uploadAssets                 UploadAsset[]
+  portalAccounts               PortalAccount[]
+  notifications                Notification[]
+  auditLogs                    AuditLog[]
+  assistantThreads             AssistantThread[]
+}
+
+model User {
+  id                String                 @id @default(cuid())
+  email             String                 @unique
+  passwordHash      String
+  firstName         String
+  lastName          String
+  pinHash           String?
+  avatarUrl         String?
+  isActive          Boolean                @default(true)
+  lastLoginAt       DateTime?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  memberships       Membership[]
+  professional      ProfessionalProfile?
+  assistantMessages AssistantMessage[]
+}
+
+model Membership {
+  id         String         @id @default(cuid())
+  tenantId   String
+  userId     String
+  role       MembershipRole
+  createdAt  DateTime       @default(now())
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+}
+
+model ProfessionalProfile {
+  id                String        @id @default(cuid())
+  tenantId          String
+  userId            String        @unique
+  licenseCode       String
+  specialty         String?
+  city              String?
+  state             String?
+  phone             String?
+  signatureAssetId  String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  signatureAsset    UploadAsset?  @relation("SignatureAsset", fields: [signatureAssetId], references: [id], onDelete: SetNull)
+}
+
+model Patient {
+  id                        String            @id @default(cuid())
+  tenantId                  String
+  createdByUserId           String?
+  fullName                  String
+  socialName                String?
+  birthDate                 DateTime
+  cpf                       String
+  gender                    String?
+  phone                     String?
+  email                     String?
+  emergencyContact          String?
+  guardianName              String?
+  profession                String?
+  educationLevel            String?
+  intakeSource              String?
+  arrivalState              String?
+  arrivalNotes              String?
+  companionName             String?
+  previousPsychologicalCare String?
+  demandSummary             String
+  careModality              String?
+  careFrequency             String?
+  preferredFormat           SessionFormat?
+  treatmentGoals            String?
+  status                    String            @default("active")
+  allowPortalAccess         Boolean           @default(false)
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+  tenant                    Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointments              Appointment[]
+  evolutions                Evolution[]
+  restrictedRecords         RestrictedRecord[]
+  documents                 Document[]
+  portalAccounts            PortalAccount[]
+
+  @@unique([tenantId, cpf])
+  @@index([tenantId, fullName])
+}
+
+model Appointment {
+  id                String            @id @default(cuid())
+  tenantId          String
+  patientId         String?
+  createdByUserId   String?
+  title             String
+  description       String?
+  startsAt          DateTime
+  endsAt            DateTime
+  status            AppointmentStatus @default(SCHEDULED)
+  mode              AppointmentMode   @default(IN_PERSON)
+  isRecurring       Boolean           @default(false)
+  recurrenceRule    String?
+  isBlocked         Boolean           @default(false)
+  colorToken        String?
+  location          String?
+  videoUrl          String?
+  internalNotes     String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient           Patient?          @relation(fields: [patientId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, startsAt])
+}
+
+model Evolution {
+  id                String         @id @default(cuid())
+  tenantId          String
+  patientId         String
+  authorUserId      String?
+  appointmentId     String?
+  serviceDate       DateTime
+  sessionNumber     Int?
+  durationMinutes   Int?
+  format            SessionFormat?
+  summary           String
+  procedures        String?
+  observations      String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  tenant            Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient           Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, serviceDate])
+}
+
+model RestrictedRecord {
+  id                String            @id @default(cuid())
+  tenantId          String
+  patientId         String
+  authorUserId      String?
+  recordDate        DateTime
+  category          String?
+  content           String
+  cidCode           String?
+  instruments       String?
+  rationale         String?
+  reservedNotes     String?
+  attachmentLabel   String?
+  sensitivity       RecordSensitivity @default(NORMAL)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient           Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, recordDate])
+}
+
+model Document {
+  id                      String        @id @default(cuid())
+  tenantId                String
+  patientId               String
+  authorUserId            String?
+  type                    DocumentType
+  requester               String?
+  purpose                 String
+  content                 String
+  validityText            String?
+  shareWithPortal         Boolean       @default(false)
+  requiresReturnInterview Boolean       @default(true)
+  sharedAt                DateTime?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  tenant                  Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient                 Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, type])
+}
+
+model UploadAsset {
+  id              String      @id @default(cuid())
+  tenantId        String
+  uploadedByUserId String?
+  purpose         String
+  fileName        String
+  mimeType        String
+  storageKey      String
+  storageProvider String
+  fileSizeBytes   Int?
+  createdAt       DateTime    @default(now())
+  tenant          Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  professionalUse ProfessionalProfile[] @relation("SignatureAsset")
+}
+
+model PortalAccount {
+  id                String         @id @default(cuid())
+  tenantId          String
+  patientId         String
+  email             String
+  passwordHash      String
+  displayName       String
+  role              MembershipRole
+  isActive          Boolean        @default(true)
+  invitedAt         DateTime?
+  lastLoginAt       DateTime?
+  revokedAt         DateTime?
+  revokedReason     String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  tenant            Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient           Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, email])
+}
+
+model Notification {
+  id           String           @id @default(cuid())
+  tenantId     String
+  userId       String?
+  type         NotificationType
+  title        String
+  body         String
+  readAt       DateTime?
+  createdAt    DateTime         @default(now())
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id           String       @id @default(cuid())
+  tenantId     String
+  actorUserId  String?
+  resourceType String
+  resourceId   String
+  action       AuditAction
+  metadata     Json?
+  createdAt    DateTime     @default(now())
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, resourceType])
+}
+
+model AssistantThread {
+  id           String             @id @default(cuid())
+  tenantId     String
+  title        String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages     AssistantMessage[]
+}
+
+model AssistantMessage {
+  id              String            @id @default(cuid())
+  threadId        String
+  authorUserId    String?
+  role            String
+  content         String
+  createdAt       DateTime          @default(now())
+  thread          AssistantThread   @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author          User?             @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+}

@@ -1,0 +1,30 @@
+{
+  "name": "lumnipsi",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "npm --workspace @lumnipsi/web run dev",
+    "dev:api": "npm --workspace @lumnipsi/api run dev",
+    "build": "npm run build --workspaces",
+    "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\" \"prisma/**/*.ts\"",
+    "smoke:api": "bash scripts/smoke-api.sh",
+    "test": "npm --workspace @lumnipsi/api run test",
+    "typecheck": "npm run typecheck --workspaces",
+    "prisma:generate": "npm --workspace @lumnipsi/api run prisma:generate",
+    "prisma:migrate": "npm --workspace @lumnipsi/api run prisma:migrate",
+    "db:push": "npm --workspace @lumnipsi/api run prisma:push",
+    "db:reset": "npm --workspace @lumnipsi/api run prisma:reset",
+    "db:seed": "npm --workspace @lumnipsi/api run prisma:seed",
+    "db:setup": "npm run db:reset && npm run prisma:generate && npm run db:seed"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1"
+  }
+}
