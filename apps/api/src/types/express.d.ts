@@ -5,6 +5,7 @@ declare global {
     interface Request {
       auth?: AccessTokenPayload;
       pinVerified?: boolean;
+      requestId?: string;
     }
   }
 }

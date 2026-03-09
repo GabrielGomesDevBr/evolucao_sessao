@@ -1,0 +1,49 @@
+name: Feature request
+description: Proponha uma nova funcionalidade ou melhoria relevante
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema ou oportunidade
+      description: Qual necessidade esta motivando esta ideia?
+      placeholder: Hoje o sistema nao cobre...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta
+      description: Descreva a mudanca sugerida.
+      placeholder: A funcionalidade poderia...
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impacto esperado
+      description: Qual ganho tecnico, operacional ou de produto isso traz?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area principal
+      options:
+        - Backend
+        - Frontend
+        - Banco de dados
+        - API
+        - Portal
+        - Seguranca
+        - Documentacao
+        - CI / tooling
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Observacoes adicionais
+      description: Dependencias, riscos ou referencias extras.

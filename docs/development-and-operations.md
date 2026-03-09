@@ -35,11 +35,13 @@ Variaveis suportadas:
 - `STORAGE_ENDPOINT`
 - `STORAGE_ACCESS_KEY`
 - `STORAGE_SECRET_KEY`
+- `PRISMA_SLOW_QUERY_MS`
 
 Observacao:
 
 - nem todas as variaveis de storage estao plenamente usadas no MVP;
 - o provider real atual continua sendo o storage local em `/tmp`.
+- `PRISMA_SLOW_QUERY_MS` define o limiar para log de query lenta do Prisma.
 
 ## Scripts do monorepo
 
@@ -112,11 +114,13 @@ Comando:
 Cobertura atual:
 
 - helpers de autenticacao;
+- helpers de healthcheck;
 - geracao de PDF.
 
 Arquivos:
 
 - `apps/api/src/lib/auth.test.ts`
+- `apps/api/src/lib/health.test.ts`
 - `apps/api/src/lib/pdf.test.ts`
 
 ### Smoke test
@@ -135,6 +139,52 @@ Fluxos verificados:
 - login interno
 - verificacao de PIN
 - login do portal
+
+## Health endpoints
+
+Rotas operacionais:
+
+- `GET /live`
+- `GET /ready`
+- `GET /health`
+
+Uso recomendado:
+
+- `live`: probe de processo
+- `ready`: readiness probe para balanceador ou orquestrador
+- `health`: consulta humana ou automacao simples
+
+## Logs e observabilidade
+
+O backend emite logs estruturados JSON com:
+
+- `timestamp`
+- `level`
+- `service`
+- `event`
+
+Eventos relevantes atuais:
+
+- `api_started`
+- `api_shutdown_started`
+- `api_shutdown_completed`
+- `api_startup_failed`
+- `database_connected`
+- `database_connection_failed`
+- `database_healthcheck_failed`
+- `prisma_warn`
+- `prisma_error`
+- `prisma_slow_query`
+- `http_request_completed`
+- `http_request_warning`
+- `http_request_failed`
+- `http_unhandled_error`
+
+Correlacao:
+
+- toda request recebe `x-request-id`;
+- respostas JSON retornam `meta.requestId`;
+- erros inesperados tambem carregam esse identificador.
 
 ## Build e qualidade
 
@@ -218,3 +268,12 @@ Verificar:
 - vinculacao em `/professional/me/signature`;
 - arquivo presente em `/tmp/lumnipsi-uploads`;
 - acesso a URL `/storage/...`.
+
+### readiness falha mas a API responde
+
+Verificar:
+
+- status de `/ready`;
+- conectividade com o banco configurado em `DATABASE_URL`;
+- logs `database_healthcheck_failed`;
+- se a API entrou em shutdown gracioso.

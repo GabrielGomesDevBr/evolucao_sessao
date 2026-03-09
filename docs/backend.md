@@ -18,9 +18,11 @@ Responsabilidades:
 
 - configurar CORS;
 - configurar `express.json`;
+- configurar `x-request-id` e log por request;
 - expor `/storage` como arquivo estatico;
-- responder `/health`;
+- responder `/live`, `/ready` e `/health`;
 - montar todos os modulos da API;
+- tratar erros inesperados de forma centralizada;
 - iniciar o servidor HTTP.
 
 ## Middlewares globais
@@ -39,6 +41,13 @@ Aceita:
 ### JSON body
 
 - limite atual: `2mb`
+
+### Request ID e log por request
+
+- cada request recebe um `requestId`;
+- o valor e devolvido no header `x-request-id`;
+- o backend registra metodo, rota, status e duracao;
+- erros inesperados sao logados com esse mesmo identificador.
 
 ### Storage estatico
 
@@ -78,10 +87,24 @@ apps/api/src/
 
 O backend usa helpers de `lib/http.ts` para devolver:
 
-- sucesso: `{ data: ... }`
-- erro: `{ error: "mensagem" }`
+- sucesso: `{ data: ..., meta: { requestId } }`
+- erro: `{ error: "mensagem", meta: { requestId } }`
 
 O frontend depende desse contrato em `apps/web/src/lib/api.ts`.
+
+## Health e prontidao
+
+Rotas disponiveis:
+
+- `GET /live`: indica se o processo HTTP esta vivo;
+- `GET /ready`: indica se a API esta pronta para receber trafego, incluindo banco;
+- `GET /health`: resumo operacional equivalente ao estado de readiness.
+
+Comportamento:
+
+- `live` nao depende do banco;
+- `ready` e `health` retornam `503` quando o banco falha ou quando a API esta em shutdown;
+- a resposta inclui estado dos servicos e `shuttingDown`.
 
 ## Autenticacao e autorizacao
 
@@ -411,6 +434,26 @@ Comportamento atual:
 
 - toda query relevante deve filtrar por `tenantId`;
 - validacao de entrada deve acontecer via Zod;
-- respostas devem seguir o contrato `{ data }` / `{ error }`;
+- respostas devem seguir o contrato com `meta.requestId`;
 - rotas sensiveis devem registrar auditoria;
 - nunca confiar no frontend para decidir seguranca.
+
+## Observabilidade minima atual
+
+O backend hoje possui:
+
+- logger estruturado em JSON;
+- log de startup e shutdown;
+- log de erro de processo;
+- log por request;
+- log de warn e error do Prisma;
+- log de query lenta do Prisma;
+- healthcheck com verificacao real do banco.
+
+Ainda nao possui:
+
+- tracing distribuido;
+- metricas Prometheus;
+- alerting;
+- dashboards;
+- agregador central de logs.

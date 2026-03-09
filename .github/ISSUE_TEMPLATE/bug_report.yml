@@ -1,0 +1,60 @@
+name: Bug report
+description: Reporte um problema reproduzivel do sistema
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Resumo
+      description: Descreva o problema de forma objetiva.
+      placeholder: O que aconteceu?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      description: Liste o fluxo minimo para reproduzir.
+      placeholder: |
+        1. Ir para...
+        2. Clicar em...
+        3. Informar...
+        4. Ver erro...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+      placeholder: O que deveria acontecer?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamento atual
+      placeholder: O que aconteceu de fato?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area impactada
+      options:
+        - Backend
+        - Frontend
+        - Banco de dados
+        - API
+        - Portal
+        - Documentacao
+        - CI / tooling
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Evidencias
+      description: Cole stack trace, prints ou detalhes tecnicos relevantes.
+      render: shell

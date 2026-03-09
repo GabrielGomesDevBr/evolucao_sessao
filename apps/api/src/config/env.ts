@@ -19,6 +19,7 @@ const envSchema = z.object({
   STORAGE_ENDPOINT: z.string().optional(),
   STORAGE_ACCESS_KEY: z.string().optional(),
   STORAGE_SECRET_KEY: z.string().optional(),
+  PRISMA_SLOW_QUERY_MS: z.coerce.number().default(300),
 });
 
 export const env = envSchema.parse(process.env);

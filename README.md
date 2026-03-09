@@ -138,6 +138,15 @@ Documentacao detalhada disponivel em:
 - [docs/development-and-operations.md](./docs/development-and-operations.md)
 - [docs/diretrizes_cfp.md](./docs/diretrizes_cfp.md)
 
+## Colaboracao
+
+Fluxo inicial de colaboracao:
+
+- estrategia de branches e convencoes em [CONTRIBUTING.md](./CONTRIBUTING.md)
+- template de PR em [.github/pull_request_template.md](./.github/pull_request_template.md)
+- templates de issue em [.github/ISSUE_TEMPLATE](./.github/ISSUE_TEMPLATE)
+- CI em [.github/workflows/ci.yml](./.github/workflows/ci.yml)
+
 ## Observacoes importantes
 
 - o banco usa Prisma com PostgreSQL;
